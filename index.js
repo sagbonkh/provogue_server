@@ -9,6 +9,15 @@ app.use(cors());
 
 app.use(express.json());
 
+const appointmentRoutes = require("./routes/appointment-routes");
+app.use("/", appointmentRoutes);
+
+const clientRoutes = require("./routes/client-routes");
+app.use("/", clientRoutes);
+
+const orderRoutes = require("./routes/order-routes");
+app.use("/", orderRoutes);
+
 app.use((req, res, next) => {
   console.log("Logging a request from middleware");
   next();

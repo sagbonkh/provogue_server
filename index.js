@@ -18,6 +18,12 @@ app.use("/", clientRoutes);
 const orderRoutes = require("./routes/order-routes");
 app.use("/", orderRoutes);
 
+const tailorsRoutes = require("./routes/tailors-routes");
+app.use("/", tailorsRoutes);
+
+const projectRoutes = require("./routes/projects-routes");
+app.use("/", projectRoutes);
+
 app.use((req, res, next) => {
   console.log("Logging a request from middleware");
   next();

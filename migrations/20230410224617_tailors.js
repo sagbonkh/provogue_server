@@ -3,7 +3,7 @@
  * @returns { Promise<void> }
  */
 exports.up = function (knex) {
-  return knex.schema.createTable("client", (table) => {
+  return knex.schema.createTable("tailors", (table) => {
     table.increments("id").primary();
     table.string("name").notNullable();
     table.string("email").notNullable();
@@ -21,5 +21,5 @@ exports.up = function (knex) {
  * @returns { Promise<void> }
  */
 exports.down = function (knex) {
-  return knex.schema.dropTable("order").dropTable("client");
+  return knex.schema.dropTable("projects").dropTable("tailors");
 };

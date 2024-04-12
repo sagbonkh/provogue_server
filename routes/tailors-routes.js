@@ -9,4 +9,9 @@ router
   .put(tailorController.update)
   .delete(tailorController.remove);
 
+router
+  .route("/tailors/:id/clients")
+  .get(tailorController.getTailorsClients)
+  .delete(tailorController.remove);
+
 module.exports = router;

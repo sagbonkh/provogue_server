@@ -139,10 +139,34 @@ const remove = async (req, res) => {
   }
 };
 
+const getTailorsClients = async (req, res) => {
+  try {
+    const tailorsClientsFound = await knex("client").where({
+      tailor_id: req.params.id,
+    });
+
+    // Check if any projects were found for the tailor
+    if (tailorsClientsFound.length === 0) {
+      return res.status(404).json({
+        message: `No clients found for tailor with ID ${req.params.id}`,
+      });
+    }
+
+    // Send the found projects directly in the response
+    res.json(tailorsClientsFound);
+  } catch (error) {
+    // Handle database retrieval errors
+    res.status(500).json({
+      message: `Unable to retrieve tailor clients data for tailor with ID ${req.params.id}`,
+    });
+  }
+};
+
 module.exports = {
   allTailors,
   singleTailor,
   add,
   update,
   remove,
+  getTailorsClients,
 };

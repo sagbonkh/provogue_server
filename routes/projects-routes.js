@@ -8,6 +8,7 @@ router
 router
   .route("/projects/:id")
   .delete(projectController.remove)
+  .put(projectController.editProject)
   .get(projectController.singleProject);
 
 router

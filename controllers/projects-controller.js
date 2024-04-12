@@ -4,7 +4,6 @@ const getProjects = async (_req, res) => {
   try {
     const data = await knex("projects")
       .join("tailors", "projects.tailor_id", "=", "tailors.id")
-      .join("client", "projects.client_id", "=", "client.id") // Join with clients table
       .select(
         "projects.id",
         "projects.name",
@@ -13,8 +12,7 @@ const getProjects = async (_req, res) => {
         "projects.start_date",
         "projects.end_date",
         "projects.cost",
-        "projects.payment_status",
-        "client.name as client_name" // Alias client.name as client_name
+        "projects.payment_status"
       );
     res.status(200).json(data);
   } catch (err) {
@@ -33,11 +31,9 @@ const singleProject = async (req, res) => {
         "projects.start_date",
         "projects.end_date",
         "projects.cost",
-        "projects.payment_status",
-        "client.name as client_name"
+        "projects.payment_status"
       )
       .join("tailors", "projects.tailor_id", "=", "tailors.id")
-      .join("client", "projects.client_id", "=", "client.id")
       .where("projects.id", "=", req.params.id);
     if (projectFound.length === 0) {
       return res.status(404).json({
@@ -81,6 +77,7 @@ const remove = async (req, res) => {
 
 const addNew = async (req, res) => {
   // Validate request body properties
+  const projectId = req.params.id;
   if (
     !req.body.name ||
     !req.body.description ||
@@ -105,11 +102,52 @@ const addNew = async (req, res) => {
       .first();
 
     // Return the newly created project data in the response
-    res.status(201).json(createdProject);
+    return res.status(201).json(createdProject);
   } catch (error) {
     // Handle database insertion errors
-    res.status(500).json({
-      message: `Unable to create new project: ${error}`,
+    console.error("Error creating new project:", error);
+    return res.status(500).json({
+      message: "Unable to create new project",
+    });
+  }
+};
+
+const editProject = async (req, res) => {
+  const projectId = req.params.id;
+
+  // Validate request body properties
+  if (
+    !req.body.name ||
+    !req.body.description ||
+    !req.body.status ||
+    !req.body.start_date ||
+    !req.body.end_date ||
+    !req.body.cost ||
+    !req.body.payment_status
+  ) {
+    return res.status(400).json({
+      message: "Missing properties in the request body",
+    });
+  }
+
+  try {
+    // Remove 'created_at' from the request body
+    delete req.body.created_at;
+    delete req.body.updated_at;
+
+    // Update the project in the database
+    await knex("projects").where({ id: req.params.id }).update(req.body);
+
+    // Fetch the updated project data
+    const updatedProject = await knex("projects").where({ id: req.params.id });
+
+    // Return the updated project data in the response
+    return res.status(200).json(updatedProject);
+  } catch (error) {
+    // Handle database update errors
+    console.error("Error updating project:", error);
+    return res.status(500).json({
+      message: "Unable to update project",
     });
   }
 };
@@ -140,6 +178,7 @@ const getTailorsProjects = async (req, res) => {
 module.exports = {
   getProjects,
   addNew,
+  editProject,
   singleProject,
   remove,
   getTailorsProjects,

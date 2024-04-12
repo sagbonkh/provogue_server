@@ -6,12 +6,6 @@ exports.up = function (knex) {
   return knex.schema.createTable("projects", (table) => {
     table.increments("id").primary();
     table
-      .integer("client_id")
-      .unsigned()
-      .references("client.id")
-      .onUpdate("CASCADE")
-      .onDelete("CASCADE");
-    table
       .integer("tailor_id")
       .unsigned()
       .references("tailors.id")

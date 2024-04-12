@@ -3,6 +3,7 @@ exports.seed = async function (knex) {
   await knex("client").insert([
     {
       id: 1,
+      tailor_id: 1,
       name: "Nester Brookfield",
       email: "nbrookfield0@feedburner.com",
       phone: "7890123456",
@@ -10,6 +11,7 @@ exports.seed = async function (knex) {
     },
     {
       id: 2,
+      tailor_id: 2,
       name: "Esme Ayscough",
       email: "eayscough1@pagesperso-orange.fr",
       phone: "3216549870",
@@ -17,6 +19,7 @@ exports.seed = async function (knex) {
     },
     {
       id: 3,
+      tailor_id: 2,
       name: "Danni McOnie",
       email: "dmconie2@netscape.com",
       phone: "7890123456",
@@ -24,6 +27,7 @@ exports.seed = async function (knex) {
     },
     {
       id: 4,
+      tailor_id: 1,
       name: "Horatia Dalyiel",
       email: "hdalyiel3@fc2.com",
       phone: "4567890123",
@@ -31,6 +35,7 @@ exports.seed = async function (knex) {
     },
     {
       id: 5,
+      tailor_id: 1,
       name: "Mohandis Nibley",
       email: "mnibley4@marketwatch.com",
       phone: "7782223333",

@@ -1,163 +1,170 @@
 const knex = require("knex")(require("../knexfile"));
+const bcrypt = require("bcryptjs");
+const validator = require("validator");
+const jwt = require("jsonwebtoken");
 
-// get all tailors
+// Get all tailors
 const allTailors = async (_req, res) => {
   try {
     const data = await knex("tailors");
     res.status(200).json(data);
   } catch (err) {
-    res.status(400).send(`Error retrieving tailors: ${err}`);
+    res
+      .status(400)
+      .json({ message: `Error retrieving tailors: ${err.message}` });
   }
 };
 
+// Get a single tailor
 const singleTailor = async (req, res) => {
   try {
-    const tailorFound = await knex("tailors").where({ id: req.params.id });
-    if (tailorFound.length === 0) {
+    const tailorFound = await knex("tailors")
+      .where({ id: req.params.id })
+      .first();
+    if (!tailorFound) {
       return res.status(404).json({
         message: `Tailor with ID ${req.params.id} not found`,
       });
     }
-
-    // Send the found tailor data in the response
-    res.status(200).json(tailorFound[0]);
+    res.status(200).json(tailorFound);
   } catch (err) {
     res.status(500).json({
-      message: `Unable to retrieve tailor data for tailor with ID ${req.params.id}`,
+      message: `Unable to retrieve tailor data for tailor with ID ${req.params.id}: ${err.message}`,
     });
   }
 };
 
+const login = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await knex("tailors").where({ email }).first();
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    // Token creation
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
+      user: { email: user.email, id: user.id },
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// Add a new tailor
 const add = async (req, res) => {
+  const { name, email, phone, password } = req.body;
+
   // Validate request body
-  if (
-    !req.body.name ||
-    !req.body.email ||
-    !req.body.phone ||
-    !req.body.password
-  ) {
+  if (!name || !email || !phone || !password) {
     return res.status(400).json({
-      message: "Missing properties in the request body",
+      message: "All fields are required",
     });
   }
 
   // Validate email format
-  const email = req.body.email;
-  if (!email.includes("@") || !email.includes(".com")) {
+  if (!validator.isEmail(email)) {
     return res.status(400).json({ error: "Invalid email address" });
   }
 
   try {
-    // Insert new tailor into the database
-    const [newTailorId] = await knex("tailors").insert(req.body);
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const [newTailorId] = await knex("tailors").insert({
+      ...req.body,
+      password: hashedPassword,
+    });
 
-    // Fetch the newly created tailor data
     const createdTailor = await knex("tailors")
       .where({ id: newTailorId })
       .first();
-
-    // Return the newly created tailor data in the response
     res.status(201).json(createdTailor);
   } catch (error) {
-    // Handle database insertion errors
     res.status(500).json({
-      message: `Unable to create new tailor: ${error}`,
+      message: `Unable to create new tailor: ${error.message}`,
     });
   }
 };
 
+// Update a tailor
 const update = async (req, res) => {
-  if (
-    !req.body.name ||
-    !req.body.email ||
-    !req.body.phone ||
-    !req.body.password
-  ) {
+  const { name, email, phone, password } = req.body;
+  if (!name || !email || !phone || !password) {
     return res.status(400).json({
-      message: "Missing properties in the request body",
+      message: "All fields are required",
     });
   }
 
-  const email = req.body.email; // Use req.body.email instead of req.body.contact_email
-  if (!email.includes("@") || !email.includes(".com")) {
+  if (!validator.isEmail(email)) {
     return res.status(400).json({ error: "Invalid email address" });
   }
 
   try {
-    // Update the tailor information in the database
     const rowsUpdated = await knex("tailors")
       .where({ id: req.params.id })
       .update(req.body);
 
-    // Check if any rows were updated
     if (rowsUpdated === 0) {
       return res.status(404).json({
         message: `Tailor with ID ${req.params.id} not found`,
       });
     }
 
-    // Fetch the updated tailor data
     const updatedTailor = await knex("tailors")
       .where({ id: req.params.id })
       .first();
-
-    // Send the updated tailor data in the response
     res.status(200).json(updatedTailor);
   } catch (error) {
     res.status(500).json({
-      message: `Unable to update tailor with ID ${req.params.id}: ${error}`,
+      message: `Unable to update tailor with ID ${req.params.id}: ${error.message}`,
     });
   }
 };
 
+// Delete a tailor
 const remove = async (req, res) => {
   const tailorId = req.params.id;
-
   try {
-    // Delete all projects associated with the tailor
-    await knex("projects").where({ tailor_id: tailorId }).delete();
-
-    // Delete the tailor
     const rowsDeleted = await knex("tailors").where({ id: tailorId }).delete();
-
-    // Check if the tailor was found and deleted
     if (rowsDeleted === 0) {
-      return res
-        .status(404)
-        .json({ message: `Tailor with ID ${tailorId} not found` });
+      return res.status(404).json({
+        message: `Tailor with ID ${tailorId} not found`,
+      });
     }
-
-    // Send a success response indicating the deletion of the tailor and associated projects
     res.status(200).json({
-      message: `Tailor with ID ${tailorId} and associated projects deleted successfully`,
+      message: `Tailor with ID ${tailorId} deleted successfully`,
     });
   } catch (error) {
-    // Handle errors
     res.status(500).json({
-      message: `Unable to delete tailor and its projects: ${error}`,
+      message: `Unable to delete tailor with ID ${tailorId}: ${error.message}`,
     });
   }
 };
 
+// Get all clients associated with a tailor
 const getTailorsClients = async (req, res) => {
   try {
-    const tailorsClientsFound = await knex("client").where({
-      tailor_id: req.params.id,
-    });
-
-    // Check if any projects were found for the tailor
-    if (tailorsClientsFound.length === 0) {
+    const clients = await knex("client").where({ tailor_id: req.params.id });
+    if (clients.length === 0) {
       return res.status(404).json({
         message: `No clients found for tailor with ID ${req.params.id}`,
       });
     }
-
-    // Send the found projects directly in the response
-    res.json(tailorsClientsFound);
+    res.status(200).json(clients);
   } catch (error) {
-    // Handle database retrieval errors
     res.status(500).json({
-      message: `Unable to retrieve tailor clients data for tailor with ID ${req.params.id}`,
+      message: `Unable to retrieve clients for tailor with ID ${req.params.id}: ${error.message}`,
     });
   }
 };
@@ -169,4 +176,5 @@ module.exports = {
   update,
   remove,
   getTailorsClients,
+  login,
 };

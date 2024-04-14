@@ -1,7 +1,11 @@
 const router = require("express").Router();
 const tailorController = require("../controllers/tailors-controller");
 
-router.route("/").get(tailorController.allTailors).post(tailorController.add);
+router
+  .route("/tailors")
+  .get(tailorController.allTailors)
+  .post(tailorController.add);
+router.route("/tailors/login").post(tailorController.login);
 
 router
   .route("/tailors/:id")

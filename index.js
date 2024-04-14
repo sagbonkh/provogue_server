@@ -5,7 +5,34 @@ const cors = require("cors");
 
 const PORT = process.env.PORT || 5050;
 
-app.use(cors());
+// Middleware for creating a session id on server and a session cookie on client
+const expressSession = require("express-session");
+
+// Add http headers, small layer of security
+const helmet = require("helmet");
+
+// Passport library and Github Strategy
+const passport = require("passport");
+const GitHubStrategy = require("passport-github2").Strategy;
+
+// Knex instance
+const knex = require("knex")(require("./knexfile.js"));
+
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
+
+// Include express-session middleware (with additional config options required for Passport session)
+app.use(
+  expressSession({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
 app.use(express.json());
 

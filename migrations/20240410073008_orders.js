@@ -27,3 +27,5 @@ exports.up = function (knex) {
 exports.down = function (knex) {
   return knex.schema.dropTable("order");
 };
+
+exports.down = function (knex) {};

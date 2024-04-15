@@ -18,6 +18,9 @@ const singleClient = async (req, res) => {
         message: `Client with ID ${req.params.id} not found`,
       });
     }
+
+    // Send the found client data in the response
+    res.status(200).json(clientFound[0]);
   } catch (err) {
     res.status(500).json({
       message: `Unable to retrieve Client data for Client with ID ${req.params.id}`,
@@ -30,16 +33,17 @@ const add = async (req, res) => {
     !req.body.name ||
     !req.body.email ||
     !req.body.phone ||
-    !req.body.address
+    !req.body.password
   ) {
     return res.status(400).json({
       message: "Missing properties in the request body",
     });
   }
 
-  const email = req.body.contact_email;
-  if (!email.includes("@" && ".com")) {
-    return res.status(400).json({ error: "Invalid email adress" });
+  const email = req.body.email; // Use req.body.email instead of req.body.contact_email
+  if (!email.includes("@") || !email.includes(".com")) {
+    // Correct email validation condition
+    return res.status(400).json({ error: "Invalid email address" });
   }
 
   try {
@@ -61,16 +65,17 @@ const update = async (req, res) => {
     !req.body.name ||
     !req.body.email ||
     !req.body.phone ||
-    !req.body.address
+    !req.body.password
   ) {
     return res.status(400).json({
       message: "Missing properties in the request body",
     });
   }
 
-  const email = req.body.contact_email;
-  if (!email.includes("@" && ".com")) {
-    return res.status(400).json({ error: "Invalid email adress" });
+  const email = req.body.email; // Use req.body.email instead of req.body.contact_email
+  if (!email.includes("@") || !email.includes(".com")) {
+    // Correct email validation condition
+    return res.status(400).json({ error: "Invalid email address" });
   }
 
   try {
@@ -100,7 +105,7 @@ const remove = async (req, res) => {
   const clientId = req.params.id;
 
   try {
-    const orderDeleted = await knex("order")
+    const ordersDeleted = await knex("order")
       .where({ client_id: clientId })
       .delete();
 
@@ -109,7 +114,7 @@ const remove = async (req, res) => {
     if (rowsDeleted === 0) {
       return res
         .status(404)
-        .json({ message: `Client with ID ${clientId} not found` });
+        .json({ message: `No orders found for client with ID ${clientId}` });
     }
 
     res.sendStatus(204);

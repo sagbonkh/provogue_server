@@ -16,4 +16,9 @@ router
   .get(projectController.getTailorsProjects)
   .delete(projectController.remove);
 
+router
+  .route("/client/:id/projects")
+  .get(projectController.getClientsProjects)
+  .delete(projectController.remove);
+
 module.exports = router;

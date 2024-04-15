@@ -3,6 +3,7 @@ exports.seed = async function (knex) {
   await knex("projects").insert([
     {
       tailor_id: 1,
+      client_id: 1,
       name: "Custom Suit",
       description: "Tailor a custom suit for a wedding event.",
       status: "In progress",
@@ -12,7 +13,8 @@ exports.seed = async function (knex) {
       payment_status: "Pending",
     },
     {
-      tailor_id: 2, // Assuming the tailor with ID 2 from the Tailors table
+      tailor_id: 2,
+      client_id: 2,
       name: "Evening Gown",
       description: "Create an elegant evening gown for a special occasion.",
       status: "Completed",

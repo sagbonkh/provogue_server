@@ -4,15 +4,20 @@ const getProjects = async (_req, res) => {
   try {
     const data = await knex("projects")
       .join("tailors", "projects.tailor_id", "=", "tailors.id")
+      .join("client", "projects.client_id", "=", "client.id")
       .select(
-        "projects.id",
-        "projects.name",
+        "projects.id as project_id",
+        "projects.name as project_name",
         "projects.description",
         "projects.status",
         "projects.start_date",
         "projects.end_date",
         "projects.cost",
-        "projects.payment_status"
+        "projects.payment_status",
+        "tailors.id as tailor_id",
+        "tailors.name as tailor_name",
+        "client.id as client_id",
+        "client.name as client_name"
       );
     res.status(200).json(data);
   } catch (err) {
@@ -25,6 +30,10 @@ const singleProject = async (req, res) => {
     const projectFound = await knex("projects")
       .select(
         "projects.id",
+        "tailors.id",
+        "client.id",
+        "client.name",
+        "tailors.name",
         "projects.name",
         "projects.description",
         "projects.status",
@@ -34,6 +43,7 @@ const singleProject = async (req, res) => {
         "projects.payment_status"
       )
       .join("tailors", "projects.tailor_id", "=", "tailors.id")
+      .join("client", "projects.client_id", "=", "client.id")
       .where("projects.id", "=", req.params.id);
     if (projectFound.length === 0) {
       return res.status(404).json({
@@ -85,7 +95,9 @@ const addNew = async (req, res) => {
     !req.body.start_date ||
     !req.body.end_date ||
     !req.body.cost ||
-    !req.body.payment_status
+    !req.body.payment_status ||
+    !req.body.client_id ||
+    !req.body.tailor_id
   ) {
     return res.status(400).json({
       message: "Missing properties in the request body",
@@ -123,7 +135,9 @@ const editProject = async (req, res) => {
     !req.body.start_date ||
     !req.body.end_date ||
     !req.body.cost ||
-    !req.body.payment_status
+    !req.body.payment_status ||
+    !req.body.client_id ||
+    !req.body.tailor_id
   ) {
     return res.status(400).json({
       message: "Missing properties in the request body",
@@ -175,6 +189,45 @@ const getTailorsProjects = async (req, res) => {
   }
 };
 
+const getClientsProjects = async (req, res) => {
+  try {
+    const clientProjectsFound = await knex("projects")
+      .select(
+        "projects.id as project_id",
+        "projects.name as project_name",
+        "projects.description",
+        "projects.status",
+        "projects.start_date",
+        "projects.end_date",
+        "projects.cost",
+        "projects.payment_status",
+        "tailors.id as tailor_id",
+        "tailors.name as tailor_name",
+        "client.id as client_id",
+        "client.name as client_name"
+      )
+      .join("tailors", "projects.tailor_id", "=", "tailors.id")
+      .join("client", "projects.client_id", "=", "client.id")
+      .where({
+        client_id: req.params.id,
+      });
+    // Check if any projects were found for the tailor
+    if (clientProjectsFound.length === 0) {
+      return res.status(404).json({
+        message: `No projects found for client with ID ${req.params.id}`,
+      });
+    }
+
+    // Send the found projects directly in the response
+    res.json(clientProjectsFound);
+  } catch (error) {
+    // Handle database retrieval errors
+    res.status(500).json({
+      message: `Unable to retrieve project data for client with ID ${req.params.id}`,
+    });
+  }
+};
+
 module.exports = {
   getProjects,
   addNew,
@@ -182,4 +235,5 @@ module.exports = {
   singleProject,
   remove,
   getTailorsProjects,
+  getClientsProjects,
 };

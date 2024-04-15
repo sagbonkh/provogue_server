@@ -11,6 +11,12 @@ exports.up = function (knex) {
       .references("tailors.id")
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
+    table
+      .integer("client_id")
+      .unsigned()
+      .references("client.id")
+      .onUpdate("CASCADE")
+      .onDelete("CASCADE");
     table.string("name").notNullable();
     table.string("description").notNullable();
     table.string("status").notNullable();

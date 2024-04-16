@@ -8,11 +8,17 @@ router
 router
   .route("/orders/:id")
   .delete(orderController.remove)
-  .get(orderController.getOne);
+  .get(orderController.getOne)
+  .put(orderController.editOrder);
 
 router
   .route("/client/:id/orders")
   .get(orderController.getClientOrders)
+  .delete(orderController.remove);
+
+router
+  .route("/tailors/:id/orders")
+  .get(orderController.getTailorsOrders)
   .delete(orderController.remove);
 
 module.exports = router;

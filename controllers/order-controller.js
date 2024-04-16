@@ -4,41 +4,81 @@ const getAll = async (_req, res) => {
   try {
     const data = await knex("order")
       .join("client", "order.client_id", "=", "client.id")
+      .join("tailors", "order.tailor_id", "=", "tailors.id")
       .select(
-        "order.id",
-        "client.name",
+        "order.id as order_id",
+        "client.name as client_name",
+        "client.id as client_id",
+        "tailors.id as tailor_id",
+        "tailors.name as tailor_name",
+        "order.description",
+        "order.due_date",
         "order.service",
         "order.order_date",
         "order.status"
       );
     res.status(200).json(data);
   } catch (err) {
-    res.status(400).send(`Error retrieving Orders: ${err}`);
+    res.status(500).send(`Error retrieving Orders: ${err}`);
   }
 };
+const editOrder = async (req, res) => {
+  const { status } = req.body;
+  if (!status) {
+    return res.status(400).json({
+      message: "Missing required properties in the request body",
+    });
+  }
+  try {
+    // Remove 'created_at' from the request body
+    delete req.body.created_at;
+    delete req.body.updated_at;
 
+    // Update the project in the database
+    await knex("order").where({ id: req.params.id }).update(req.body);
+
+    // Fetch the updated project data
+    const updatedOrder = await knex("order").where({ id: req.params.id });
+
+    // Return the updated project data in the response
+    return res.status(200).json(updatedOrder);
+  } catch (error) {
+    // Handle database update errors
+    console.error("Error updating order:", error);
+    return res.status(500).json({
+      message: "Unable to update project",
+    });
+  }
+};
 const getOne = async (req, res) => {
   try {
     const orderFound = await knex("order")
       .select(
-        "order.id",
-        "client.name",
+        "order.id as order_id",
+        "client.name as client_name",
+        "client.id as client_id",
+        "tailors.id as tailor_id",
+        "tailors.name as tailor_name",
         "order.service",
         "order.order_date",
+        "order.description",
+        "order.due_date",
         "order.status"
       )
       .join("client", "order.client_id", "=", "client.id")
-      .where("order.id", "=", req.params.id);
+      .join("tailors", "order.tailor_id", "=", "tailors.id")
+      .where("order.id", req.params.id); // Simplified, no need for "="
+
     if (orderFound.length === 0) {
       return res.status(404).json({
         message: `Order with ID ${req.params.id} not found`,
       });
     }
-    const orderData = itemFound[0];
+    const orderData = orderFound[0]; // Correct variable name
     res.status(200).json(orderData);
   } catch (err) {
     res.status(500).json({
-      message: `Unable to retrieve Order data for order with ID ${req.params.id}`,
+      message: `Unable to retrieve Order data for order with ID ${req.params.id}: ${err.message}`,
     });
   }
 };
@@ -64,41 +104,79 @@ const remove = async (req, res) => {
 };
 
 const addNew = async (req, res) => {
-  if (!req.body.service || !req.body.status) {
+  const { service, client_id, tailor_id, due_date, description } = req.body;
+  if (!service || !client_id || !tailor_id || !due_date || !description) {
     return res.status(400).json({
-      message: "Missing properties in the request body",
+      message: "Missing required properties in the request body",
     });
   }
   try {
-    const result = await knex("order").insert(req.body);
-
-    const newOrderId = result[0];
-    const createdItem = await knex("order").where({ id: newOrderId });
-
-    res.status(201).json(createdItem);
+    const [newOrderId] = await knex("order").insert(req.body);
+    const createdOrder = await knex("order").where({ id: newOrderId }).first();
+    res.status(201).json(createdOrder);
   } catch (error) {
     res.status(500).json({
-      message: `Unable to create new item: ${error}`,
+      message: `Unable to create new order: ${error.message}`,
     });
   }
 };
+
 const getClientOrders = async (req, res) => {
   try {
-    const clientOrdersFound = await knex("orders").where({
-      client_id: req.params.id,
-    });
-
-    if (clientOrdersFound.length === 0) {
-      return res.status(404).json({
-        message: `Client with ID ${req.params.id} not found`,
+    const data = await knex("order")
+      .join("client", "order.client_id", "=", "client.id")
+      .join("tailors", "order.tailor_id", "=", "tailors.id")
+      .select(
+        "order.id as order_id",
+        "client.name as client_name",
+        "client.id as client_id",
+        "client.email as client_email",
+        "client.phone as client_phone",
+        "tailors.id as tailor_id",
+        "tailors.name as tailor_name",
+        "order.description",
+        "order.due_date",
+        "order.service",
+        "order.order_date",
+        "order.status"
+      )
+      .where({
+        client_id: req.params.id,
       });
-    }
-
-    const clientOrderData = clientOrdersFound;
-    res.json(clientOrderData);
+    res.status(200).json(data);
   } catch (error) {
     res.status(500).json({
-      message: `Unable to retrieve client order data for client with ID ${req.params.id}`,
+      message: `Unable to retrieve orders for client with ID ${req.params.id}: ${error.message}`,
+    });
+  }
+};
+
+const getTailorsOrders = async (req, res) => {
+  try {
+    const data = await knex("order")
+      .join("client", "order.client_id", "=", "client.id")
+      .join("tailors", "order.tailor_id", "=", "tailors.id")
+      .select(
+        "order.id as order_id",
+        "client.name as client_name",
+        "client.id as client_id",
+        "client.email as client_email",
+        "client.phone as client_phone",
+        "tailors.id as tailor_id",
+        "tailors.name as tailor_name",
+        "order.description",
+        "order.due_date",
+        "order.service",
+        "order.order_date",
+        "order.status"
+      )
+      .where({
+        tailor_id: req.params.id,
+      });
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({
+      message: `Unable to retrieve orders for tailor with ID ${req.params.id}: ${error.message}`,
     });
   }
 };
@@ -109,4 +187,6 @@ module.exports = {
   getOne,
   remove,
   getClientOrders,
+  getTailorsOrders,
+  editOrder,
 };

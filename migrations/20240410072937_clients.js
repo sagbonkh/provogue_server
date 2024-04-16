@@ -5,12 +5,6 @@
 exports.up = function (knex) {
   return knex.schema.createTable("client", (table) => {
     table.increments("id").primary();
-    table
-      .integer("tailor_id")
-      .unsigned()
-      .references("tailors.id")
-      .onUpdate("CASCADE")
-      .onDelete("CASCADE");
     table.string("name").notNullable();
     table.string("email").notNullable();
     table.string("phone").notNullable();

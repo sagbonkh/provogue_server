@@ -29,18 +29,18 @@ const singleProject = async (req, res) => {
   try {
     const projectFound = await knex("projects")
       .select(
-        "projects.id",
-        "tailors.id",
-        "client.id",
-        "client.name",
-        "tailors.name",
-        "projects.name",
+        "projects.id as project_id",
+        "projects.name as project_name",
         "projects.description",
         "projects.status",
         "projects.start_date",
         "projects.end_date",
         "projects.cost",
-        "projects.payment_status"
+        "projects.payment_status",
+        "tailors.id as tailor_id",
+        "tailors.name as tailor_name",
+        "client.id as client_id",
+        "client.name as client_name"
       )
       .join("tailors", "projects.tailor_id", "=", "tailors.id")
       .join("client", "projects.client_id", "=", "client.id")
@@ -168,9 +168,24 @@ const editProject = async (req, res) => {
 
 const getTailorsProjects = async (req, res) => {
   try {
-    const tailorsProjectsFound = await knex("projects").where({
-      tailor_id: req.params.id,
-    });
+    const tailorsProjectsFound = await knex("projects")
+      .select(
+        "projects.id as project_id",
+        "projects.name as project_name",
+        "projects.description",
+        "projects.status",
+        "projects.start_date",
+        "projects.end_date",
+        "projects.cost",
+        "projects.payment_status",
+        "tailors.id as tailor_id",
+        "tailors.name as tailor_name",
+        "client.id as client_id",
+        "client.name as client_name"
+      )
+      .join("tailors", "projects.tailor_id", "=", "tailors.id")
+      .join("client", "projects.client_id", "=", "client.id")
+      .where("projects.tailor_id", "=", req.params.id);
 
     // Check if any projects were found for the tailor
     if (tailorsProjectsFound.length === 0) {

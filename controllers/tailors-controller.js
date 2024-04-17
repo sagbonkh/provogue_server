@@ -1,7 +1,6 @@
 const knex = require("knex")(require("../knexfile"));
 const bcrypt = require("bcryptjs");
 const validator = require("validator");
-const jwt = require("jsonwebtoken");
 
 // Get all tailors
 const allTailors = async (_req, res) => {
@@ -46,16 +45,8 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Token creation
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "24h" }
-    );
-
     res.json({
       message: "Login successful",
-      token,
       user: { email: user.email, id: user.id },
     });
   } catch (err) {
@@ -155,7 +146,7 @@ const remove = async (req, res) => {
 // Get all clients associated with a tailor
 const getTailorsClients = async (req, res) => {
   try {
-    const clients = await knex("client").where({ tailor_id: req.params.id });
+    const clients = await knex("client").where({ id: req.params.id });
     if (clients.length === 0) {
       return res.status(404).json({
         message: `No clients found for tailor with ID ${req.params.id}`,

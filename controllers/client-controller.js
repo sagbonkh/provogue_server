@@ -1,4 +1,6 @@
 const knex = require("knex")(require("../knexfile"));
+const bcrypt = require("bcryptjs");
+const validator = require("validator");
 
 // get all clients
 const allClients = async (_req, res) => {
@@ -28,34 +30,56 @@ const singleClient = async (req, res) => {
   }
 };
 
+const login = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await knex("client").where({ email }).first();
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    res.json({
+      message: "Login successful",
+      user: { email: user.email, id: user.id },
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
 const add = async (req, res) => {
-  if (
-    !req.body.name ||
-    !req.body.email ||
-    !req.body.phone ||
-    !req.body.password
-  ) {
+  const { name, email, phone, password } = req.body;
+
+  // Validate request body
+  if (!name || !email || !phone || !password) {
     return res.status(400).json({
-      message: "Missing properties in the request body",
+      message: "All fields are required",
     });
   }
 
-  const email = req.body.email; // Use req.body.email instead of req.body.contact_email
-  if (!email.includes("@") || !email.includes(".com")) {
-    // Correct email validation condition
+  // Validate email format
+  if (!validator.isEmail(email)) {
     return res.status(400).json({ error: "Invalid email address" });
   }
 
   try {
-    const result = await knex("client").insert(req.body);
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const [newClientId] = await knex("client").insert({
+      ...req.body,
+      password: hashedPassword,
+    });
 
-    const newClientId = result[0];
-    const createdClient = await knex("client").where({ id: newClientId });
-
+    const createdClient = await knex("client")
+      .where({ id: newClientId })
+      .first();
     res.status(201).json(createdClient);
   } catch (error) {
     res.status(500).json({
-      message: `Unable to create new client: ${error}`,
+      message: `Unable to create new client: ${error.message}`,
     });
   }
 };
@@ -131,4 +155,5 @@ module.exports = {
   add,
   update,
   remove,
+  login,
 };

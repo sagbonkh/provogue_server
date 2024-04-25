@@ -94,7 +94,6 @@ const addNew = async (req, res) => {
     !req.body.status ||
     !req.body.start_date ||
     !req.body.end_date ||
-    !req.body.cost ||
     !req.body.payment_status ||
     !req.body.client_id ||
     !req.body.tailor_id

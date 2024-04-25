@@ -6,6 +6,8 @@ router
   .get(clientController.allClients)
   .post(clientController.add);
 
+router.route("/client/login").post(clientController.login);
+
 router
   .route("/client/:id")
   .get(clientController.singleClient)
